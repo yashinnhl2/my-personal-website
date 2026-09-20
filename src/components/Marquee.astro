@@ -3,7 +3,7 @@ import { ticker } from '../data/profile';
 const dots = ['var(--coral)', 'var(--orange)', 'var(--yellow)', 'var(--teal)'];
 ---
 
-<div class="marquee span-8 reveal" style="--d:.15s" aria-hidden="true">
+<div class="marquee reveal" style="--d:.15s" aria-hidden="true">
   <div class="track">
     {[0, 1].map(() => (
       <div class="set">
@@ -51,11 +51,6 @@ const dots = ['var(--coral)', 'var(--orange)', 'var(--yellow)', 'var(--teal)'];
   @keyframes slide {
     to {
       transform: translateX(-50%);
-    }
-  }
-  @media (min-width: 900px) {
-    .marquee {
-      grid-column: span 8;
     }
   }
 </style>

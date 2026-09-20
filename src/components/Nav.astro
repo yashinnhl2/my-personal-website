@@ -12,8 +12,8 @@ const links = [
   { href: '/#home', label: 'Home' },
   { href: '/#about', label: 'About' },
   { href: '/#work', label: 'Work' },
-  { href: '/blog', label: 'Blog', page: 'blog', spy: '#writing' },
   { href: '/#contact', label: 'Contact' },
+  { href: '/blog', label: 'Blog', page: 'blog' },
 ];
 ---
 
@@ -25,7 +25,7 @@ const links = [
   <nav class="pill" aria-label="Primary" data-current={current}>
     <span class="glider" aria-hidden="true"></span>
     {links.map((l) => (
-      <a href={l.href} data-link data-page={l.page} data-spy={l.spy} aria-current={l.page && l.page === current ? 'page' : undefined}>
+      <a href={l.href} data-link data-page={l.page} aria-current={l.page && l.page === current ? 'page' : undefined}>
         {l.label}
       </a>
     ))}
@@ -177,18 +177,16 @@ const links = [
   let current = (page && links.find((l) => l.dataset.page === page)) || links[0];
 
   if (!page) {
-    // a link's section is its hash, or data-spy for links that point to another page
-    const target = (l: HTMLAnchorElement) => l.hash || l.dataset.spy || '';
     const sections = links
-      .filter(target)
-      .map((l) => document.querySelector(target(l)) as HTMLElement | null)
+      .filter((l) => l.hash)
+      .map((l) => document.querySelector(l.hash) as HTMLElement | null)
       .filter((s): s is HTMLElement => !!s);
 
     const spy = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting) {
-            current = links.find((l) => target(l) === `#${e.target.id}`) ?? current;
+            current = links.find((l) => l.hash === `#${e.target.id}`) ?? current;
             moveTo(current);
           }
         }
