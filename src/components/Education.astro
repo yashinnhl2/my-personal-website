@@ -1,0 +1,138 @@
+---
+import Icon from './Icon.astro';
+import { education, profile } from '../data/profile';
+---
+
+<section id="about" class="card edu span-4 reveal">
+  <span class="cap"><Icon name="cap" size={26} /></span>
+  <h2 class="card-title">I’ve studied,<br />professionally.</h2>
+
+  <ol>
+    {education.map((e) => (
+      <li>
+        <span class="years">{e.years}</span>
+        <h3>{e.degree}</h3>
+        <p>{e.school}</p>
+      </li>
+    ))}
+  </ol>
+
+  <a class="scholar" href={profile.scholar} target="_blank" rel="noopener">
+    <Icon name="book" size={18} />
+    <span>Google Scholar</span>
+    <Icon name="arrow" size={16} />
+  </a>
+</section>
+
+<style>
+  .edu {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+  .cap {
+    position: absolute;
+    top: 22px;
+    right: 22px;
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    color: var(--yellow);
+    background: #1f1f23;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 8px 20px rgba(0, 0, 0, 0.4);
+    animation: float 4s ease-in-out infinite;
+  }
+  ol {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    border-left: 1px dashed rgba(255, 255, 255, 0.18);
+  }
+  li {
+    position: relative;
+  }
+  li::before {
+    content: '';
+    position: absolute;
+    left: -23px;
+    top: 7px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--coral);
+    box-shadow: 0 0 0 4px var(--card);
+  }
+  li:nth-child(2)::before {
+    background: var(--teal);
+  }
+  .years {
+    font-family: var(--font-dot);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--yellow);
+  }
+  h3 {
+    margin-top: 2px;
+    font-size: 1.08rem;
+    font-weight: 600;
+  }
+  p {
+    font-size: 0.92rem;
+  }
+  .scholar {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: auto;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    background: #1d1d21;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-btn);
+    transition:
+      background 0.3s,
+      color 0.3s,
+      border-color 0.3s,
+      transform 0.4s var(--ease);
+  }
+  .scholar :global(svg:first-child) {
+    color: var(--yellow);
+    transition: color 0.3s;
+  }
+  .scholar :global(svg:last-child) {
+    transition: transform 0.4s var(--ease);
+  }
+  .scholar:hover {
+    color: #17110e;
+    background: var(--yellow);
+    border-color: var(--yellow);
+    transform: translateY(-2px);
+  }
+  .scholar:hover :global(svg:first-child) {
+    color: #17110e;
+  }
+  .scholar:hover :global(svg:last-child) {
+    transform: translate(3px, -3px);
+  }
+
+  @media (min-width: 900px) {
+    .edu {
+      grid-row: span 2;
+    }
+  }
+  @keyframes float {
+    50% {
+      transform: translateY(-6px) rotate(-4deg);
+    }
+  }
+</style>

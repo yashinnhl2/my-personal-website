@@ -1,0 +1,163 @@
+---
+import Icon from './Icon.astro';
+import { profile, roles } from '../data/profile';
+
+const dots = ['var(--coral)', 'var(--orange)', 'var(--yellow)', 'var(--teal)'];
+---
+
+<section id="home" class="card hero span-8 reveal">
+  <h1>
+    {roles.map((r, i) => (
+      <span class="line" style={`--i:${i}`}>
+        <span class="inner">{r.title}<i style={`color:${dots[i]}`}>.</i></span>
+      </span>
+    ))}
+  </h1>
+
+  <div class="foot">
+    <p class="now">
+      <span class="live" aria-hidden="true"></span>
+      <span>Engineering at <strong>{profile.currentCompany}</strong>, from Ottawa</span>
+    </p>
+    <button type="button" class="cta" data-open-contact data-magnetic>
+      Say hello! <Icon name="chat" size={18} />
+    </button>
+  </div>
+</section>
+
+<style>
+  .hero {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 40px;
+    min-height: 400px;
+    grid-row: span 2;
+  }
+
+  h1 {
+    font-size: clamp(1.65rem, 4.4vw, 3.6rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.12;
+  }
+
+  .line {
+    display: block;
+    overflow: hidden;
+    padding-bottom: 0.06em;
+  }
+  .inner {
+    display: inline-block;
+    animation: rise 1s var(--ease) calc(0.25s + var(--i) * 0.12s) both;
+  }
+  .inner i {
+    font-style: normal;
+    display: inline-block;
+    animation: pop 0.6s var(--ease) calc(0.9s + var(--i) * 0.12s) both;
+  }
+
+
+  .foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .now {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    font-size: 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .now strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .live {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--teal);
+    box-shadow: 0 0 0 0 rgba(42, 157, 143, 0.7);
+    animation: ping 2s infinite;
+  }
+
+  .cta {
+    font: inherit;
+    font-size: 0.92rem;
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--text);
+    background: #2f2f33;
+    border-radius: var(--radius-btn);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 8px 24px rgba(0, 0, 0, 0.35);
+    transition:
+      background 0.3s,
+      color 0.3s,
+      transform 0.25s var(--ease);
+  }
+  .cta:hover {
+    background: var(--coral);
+    color: #17110e;
+  }
+  .cta :global(svg) {
+    transition: transform 0.4s var(--ease);
+  }
+  .cta:hover :global(svg) {
+    transform: scale(1.18) rotate(-8deg);
+  }
+
+  @keyframes rise {
+    from {
+      transform: translateY(110%);
+    }
+  }
+  @keyframes pop {
+    from {
+      transform: scale(0);
+    }
+  }
+  @keyframes ping {
+    70% {
+      box-shadow: 0 0 0 10px rgba(42, 157, 143, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(42, 157, 143, 0);
+    }
+  }
+
+  @media (max-width: 899px) {
+    .hero {
+      grid-row: auto;
+      min-height: 0;
+    }
+  }
+</style>
+
+<script>
+  // magnetic buttons
+  document.querySelectorAll<HTMLElement>('[data-magnetic]').forEach((el) => {
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left - r.width / 2) * 0.25;
+      const y = (e.clientY - r.top - r.height / 2) * 0.35;
+      el.style.transform = `translate(${x}px, ${y}px)`;
+    });
+    el.addEventListener('pointerleave', () => (el.style.transform = ''));
+  });
+</script>

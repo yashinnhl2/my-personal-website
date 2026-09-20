@@ -1,0 +1,30 @@
+---
+import { profile } from '../data/profile';
+---
+
+<footer>
+  <p>© {new Date().getFullYear()} {profile.name}. Built with Astro & a lot of CSS.</p>
+  <a href="#top" onclick="window.scrollTo({ top: 0, behavior: 'smooth' }); return false;">Back to top ↑</a>
+</footer>
+
+<style>
+  footer {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px 20px 48px;
+    font-size: 0.85rem;
+  }
+  a {
+    color: var(--text);
+    transition: color 0.25s;
+  }
+  a:hover {
+    color: var(--coral);
+  }
+</style>

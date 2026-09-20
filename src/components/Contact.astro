@@ -1,0 +1,120 @@
+---
+import Icon from './Icon.astro';
+import { profile } from '../data/profile';
+---
+
+<section id="contact" class="card contact reveal">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <span class="eyebrow">Contact</span>
+  <h2>Have something worth building?<br /><span>Let’s talk<i class="dot">.</i></span></h2>
+  <div class="actions">
+    <button type="button" class="btn primary" data-open-contact data-magnetic>
+      <Icon name="chat" size={18} /> Contact me
+    </button>
+    <a class="btn" href={profile.linkedin} target="_blank" rel="noopener" data-magnetic>
+      <Icon name="linkedin" size={18} /> LinkedIn <Icon name="arrow" size={16} />
+    </a>
+    <a class="btn" href={profile.scholar} target="_blank" rel="noopener" data-magnetic>
+      <Icon name="book" size={18} /> Google Scholar <Icon name="arrow" size={16} />
+    </a>
+  </div>
+</section>
+
+<style>
+  .contact {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 22px;
+    padding: clamp(32px, 6vw, 72px);
+  }
+  h2 {
+    font-size: clamp(2rem, 5.5vw, 4rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--text);
+  }
+  h2 span {
+    background: linear-gradient(90deg, var(--coral), var(--orange), var(--yellow), var(--teal), var(--coral));
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: flow 8s linear infinite;
+  }
+  h2 .dot {
+    font-style: normal;
+    -webkit-text-fill-color: var(--teal);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .btn {
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: #2a2a2e;
+    border-radius: var(--radius-btn);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition:
+      background 0.3s,
+      color 0.3s,
+      transform 0.25s var(--ease);
+  }
+  .btn:hover {
+    background: var(--orange);
+    color: #17110e;
+  }
+  .primary {
+    background: var(--coral);
+    color: #17110e;
+  }
+  .primary:hover {
+    background: var(--yellow);
+  }
+  .blob {
+    position: absolute;
+    z-index: -1;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.22;
+    animation: drift 14s ease-in-out infinite alternate;
+  }
+  .b1 {
+    width: 320px;
+    height: 320px;
+    right: -60px;
+    top: -80px;
+    background: var(--coral);
+  }
+  .b2 {
+    width: 260px;
+    height: 260px;
+    right: 180px;
+    bottom: -120px;
+    background: var(--teal);
+    animation-delay: -6s;
+  }
+  @keyframes flow {
+    to {
+      background-position: 300% 0;
+    }
+  }
+  @keyframes drift {
+    to {
+      transform: translate(-60px, 40px) scale(1.2);
+    }
+  }
+</style>

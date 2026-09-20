@@ -1,0 +1,190 @@
+---
+import { render } from 'astro:content';
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { getPosts, formatDate, readingTime } from '../../utils/blog';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, description, date, tags } = post.data;
+---
+
+<BlogLayout title={`${title} — Yasin Farmani`} description={description}>
+  <article>
+    <a class="back" href="/blog"><Icon name="arrow" size={16} /> All posts</a>
+
+    <header>
+      <p class="meta">
+        <time datetime={date.toISOString()}>{formatDate(date)}</time>
+        <span>·</span>
+        <span>{readingTime(post)} min read</span>
+      </p>
+      <h1>{title}</h1>
+      <p class="lead">{description}</p>
+      {tags.length > 0 && (
+        <ul class="tags">{tags.map((t) => <li>#{t}</li>)}</ul>
+      )}
+    </header>
+
+    <div class="card prose reveal">
+      <Content />
+    </div>
+  </article>
+</BlogLayout>
+
+<style>
+  article {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 26px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition:
+      color 0.25s,
+      transform 0.35s var(--ease);
+  }
+  .back :global(svg) {
+    transform: rotate(-135deg);
+  }
+  .back:hover {
+    color: var(--text);
+    transform: translateX(-4px);
+  }
+  header {
+    margin-bottom: 30px;
+    animation: rise 0.9s var(--ease) both;
+  }
+  .meta {
+    display: flex;
+    gap: 8px;
+    font-family: var(--font-dot);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--yellow);
+  }
+  h1 {
+    margin-top: 10px;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+  .lead {
+    margin-top: 14px;
+    font-size: 1.12rem;
+  }
+  .tags {
+    list-style: none;
+    margin: 18px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tags li {
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text);
+    background: #1d1d21;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+
+  /* the article card shouldn't lift on hover while reading */
+  :global(.js) .prose.card.reveal.in:hover,
+  .prose.card:hover {
+    transform: none;
+  }
+
+  /* markdown content is rendered outside this component's scope */
+  .prose {
+    color: #c9c9c9;
+    font-size: 1.05rem;
+    line-height: 1.75;
+  }
+  .prose :global(> * + *) {
+    margin-top: 1.2em;
+  }
+  .prose :global(h2) {
+    margin-top: 2em;
+    font-size: 1.55rem;
+    letter-spacing: -0.01em;
+  }
+  .prose :global(h3) {
+    margin-top: 1.6em;
+    font-size: 1.2rem;
+  }
+  .prose :global(a) {
+    color: var(--orange);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .prose :global(a:hover) {
+    color: var(--yellow);
+  }
+  .prose :global(strong) {
+    color: var(--text);
+  }
+  .prose :global(ul),
+  .prose :global(ol) {
+    padding-left: 1.3em;
+  }
+  .prose :global(li + li) {
+    margin-top: 0.4em;
+  }
+  .prose :global(li::marker) {
+    color: var(--coral);
+  }
+  .prose :global(blockquote) {
+    margin-left: 0;
+    padding: 4px 0 4px 18px;
+    border-left: 3px solid var(--teal);
+    color: var(--muted);
+  }
+  .prose :global(code) {
+    padding: 2px 7px;
+    font-size: 0.88em;
+    color: var(--yellow);
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 6px;
+  }
+  .prose :global(pre) {
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    background: #0f0f12 !important;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  .prose :global(pre code) {
+    padding: 0;
+    color: inherit;
+    background: none;
+  }
+  .prose :global(img) {
+    max-width: 100%;
+    border-radius: 14px;
+  }
+  .prose :global(hr) {
+    border: 0;
+    border-top: 1px dashed rgba(255, 255, 255, 0.18);
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+  }
+</style>

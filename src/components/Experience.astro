@@ -1,0 +1,208 @@
+---
+import Icon from './Icon.astro';
+import { experience } from '../data/profile';
+
+const longest = Math.max(...experience.map((e) => e.months));
+---
+
+<section id="work" class="card work span-8 reveal" style="--d:.1s">
+  <h2 class="card-title">Where I’ve worked</h2>
+  <p class="card-sub">Five teams, two countries, one thread: interfaces that hold up under real use.</p>
+
+  <div class="tabs" role="tablist" aria-label="Companies">
+    {experience.map((e, i) => (
+      <button role="tab" id={`tab-${e.id}`} aria-controls={`panel-${e.id}`} aria-selected={i === 0} data-id={e.id}>
+        {e.company}
+      </button>
+    ))}
+  </div>
+
+  <div class="panels">
+    {experience.map((e, i) => (
+      <article
+        role="tabpanel"
+        id={`panel-${e.id}`}
+        aria-labelledby={`tab-${e.id}`}
+        hidden={i !== 0}
+        style={`--w:${Math.round((e.months / longest) * 100)}%`}
+      >
+        <div class="head">
+          <span class="badge"><Icon name="building" size={22} /></span>
+          <div>
+            <h3>{e.role}</h3>
+            <p class="co">
+              {e.fullName ?? e.company}
+              {e.current && <span class="chip">Current</span>}
+            </p>
+          </div>
+        </div>
+        <dl>
+          <div><dt>When</dt><dd>{e.period}</dd></div>
+          <div><dt>Tenure</dt><dd>{e.duration}</dd></div>
+          <div><dt><Icon name="pin" size={13} /> Where</dt><dd>{e.place}</dd></div>
+        </dl>
+        <div class="bar"><span></span></div>
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  .work {
+    display: flex;
+    flex-direction: column;
+  }
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 22px 0 20px;
+  }
+  button {
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 9px 16px;
+    color: var(--muted);
+    background: #1d1d21;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+    transition:
+      color 0.25s,
+      background 0.25s,
+      border-color 0.25s,
+      transform 0.35s var(--ease);
+  }
+  button:hover {
+    color: var(--text);
+    transform: translateY(-2px);
+  }
+  button[aria-selected='true'] {
+    color: #151212;
+    background: var(--orange);
+    border-color: var(--orange);
+  }
+
+  article {
+    padding: 22px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--line);
+    animation: swap 0.55s var(--ease);
+  }
+  article[hidden] {
+    display: none;
+  }
+  .head {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .badge {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    color: var(--yellow);
+    background: #222226;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+  .co {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.92rem;
+  }
+  .chip {
+    padding: 2px 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #0f1d1b;
+    background: var(--teal);
+    border-radius: 999px;
+  }
+  dl {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 22px 0 20px;
+  }
+  dt {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #777;
+  }
+  dd {
+    margin: 3px 0 0;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .bar {
+    height: 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+  }
+  .bar span {
+    display: block;
+    height: 100%;
+    width: var(--w);
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--coral), var(--orange), var(--yellow), var(--teal));
+    transform-origin: left;
+    animation: grow 0.9s var(--ease) 0.1s both;
+  }
+
+  @keyframes swap {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  }
+  @keyframes grow {
+    from {
+      transform: scaleX(0);
+    }
+  }
+</style>
+
+<script>
+  const root = document.getElementById('work')!;
+  const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role=tab]')];
+
+  function select(id: string, focus = false) {
+    for (const t of tabs) {
+      const on = t.dataset.id === id;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      const panel = document.getElementById(`panel-${t.dataset.id}`)!;
+      panel.hidden = !on;
+      if (on && focus) t.focus();
+    }
+  }
+
+  tabs.forEach((t, i) => {
+    t.tabIndex = i === 0 ? 0 : -1;
+    t.addEventListener('click', () => select(t.dataset.id!));
+    t.addEventListener('keydown', (e) => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (d) select(tabs[(i + d + tabs.length) % tabs.length].dataset.id!, true);
+    });
+  });
+
+  document.addEventListener('select-company', (e) => select((e as CustomEvent<string>).detail));
+</script>

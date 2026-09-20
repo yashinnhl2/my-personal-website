@@ -1,0 +1,51 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getPosts } from '../../utils/blog';
+
+const posts = await getPosts();
+---
+
+<BlogLayout title="Blog — Yasin Farmani" description="Notes on frontend engineering, HCI and things I build.">
+  <header class="intro">
+    <span class="eyebrow">Blog</span>
+    <h1>Writing<i>.</i></h1>
+    <p>Notes on frontend engineering, HCI and the things I build.</p>
+  </header>
+
+  {posts.length === 0 && <p class="empty">No posts yet.</p>}
+  <div class="list">
+    {posts.map((post, i) => <PostCard post={post} delay={i * 0.08} />)}
+  </div>
+</BlogLayout>
+
+<style>
+  .intro {
+    padding: 8px 4px 28px;
+    animation: rise 0.9s var(--ease) both;
+  }
+  h1 {
+    margin-top: 10px;
+    font-size: clamp(2.6rem, 7vw, 4.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+  h1 i {
+    font-style: normal;
+    color: var(--coral);
+  }
+  .intro p {
+    margin-top: 10px;
+    font-size: 1.1rem;
+  }
+  .list {
+    display: grid;
+    gap: var(--gap);
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+  }
+</style>

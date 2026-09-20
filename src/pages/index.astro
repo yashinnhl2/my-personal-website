@@ -1,0 +1,34 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Starfield from '../components/Starfield.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import SideCards from '../components/SideCards.astro';
+import Marquee from '../components/Marquee.astro';
+import Education from '../components/Education.astro';
+import Experience from '../components/Experience.astro';
+import Stats from '../components/Stats.astro';
+import Skills from '../components/Skills.astro';
+import Details from '../components/Details.astro';
+import LatestPosts from '../components/LatestPosts.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout>
+  <Starfield />
+  <Nav />
+  <main class="bento">
+    <Hero />
+    <SideCards />
+    <Education />
+    <Marquee />
+    <Experience />
+    <Stats />
+    <Skills />
+    <Details />
+    <LatestPosts />
+    <Contact />
+  </main>
+  <Footer />
+</Layout>

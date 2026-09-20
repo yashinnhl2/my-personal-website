@@ -1,0 +1,85 @@
+---
+import { profile, experience, education } from '../data/profile';
+
+const now = new Date();
+const years = now.getFullYear() - profile.careerStart;
+// fintech time = Veem + Upgrade, rounded to the nearest half year
+const monthsSinceUpgrade =
+  (now.getFullYear() - 2022) * 12 + (now.getMonth() - 6); // Upgrade started July 2022
+const veem = experience.find((e) => e.id === 'veem')!;
+const fintechYears = Math.round(((monthsSinceUpgrade + veem.months) / 12) * 2) / 2;
+const stats = [
+  { n: years, suffix: '+', label: 'years across web, network software and fintech', color: 'var(--coral)' },
+  { n: experience.length, suffix: '', label: 'companies and teams shipped with', color: 'var(--orange)' },
+  { n: education.length, suffix: '', label: 'degrees, software engineering and HCI', color: 'var(--yellow)' },
+  { n: fintechYears, suffix: '', label: 'years in fintech, at Upgrade and Veem', color: 'var(--teal)' },
+];
+---
+
+<section class="card stats reveal">
+  <h2 class="card-title">By the numbers</h2>
+  <div class="grid">
+    {stats.map((s) => (
+      <div class="stat" style={`--c:${s.color}`}>
+        <b><span data-count={s.n}>{s.n}</span>{s.suffix}</b>
+        <p>{s.label}</p>
+      </div>
+    ))}
+  </div>
+</section>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+    margin-top: 26px;
+  }
+  @media (min-width: 700px) {
+    .grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .stat {
+    padding-top: 14px;
+    border-top: 2px solid var(--c);
+  }
+  b {
+    font-family: var(--font-dot);
+    font-weight: 800;
+    font-size: clamp(2.6rem, 5vw, 3.6rem);
+    line-height: 1;
+    color: var(--text);
+  }
+  p {
+    margin-top: 8px;
+    font-size: 0.88rem;
+  }
+</style>
+
+<script>
+  const els = document.querySelectorAll<HTMLElement>('[data-count]');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const en of entries) {
+        if (!en.isIntersecting) continue;
+        io.unobserve(en.target);
+        const el = en.target as HTMLElement;
+        const to = Number(el.dataset.count);
+        const decimals = Number.isInteger(to) ? 0 : 1;
+        if (reduced) continue;
+        const t0 = performance.now();
+        const step = (now: number) => {
+          const p = Math.min((now - t0) / 1400, 1);
+          el.textContent = (to * (1 - Math.pow(1 - p, 4))).toFixed(decimals);
+          if (p < 1) requestAnimationFrame(step);
+        };
+        el.textContent = (0).toFixed(decimals);
+        requestAnimationFrame(step);
+      }
+    },
+    { threshold: 0.6 },
+  );
+  els.forEach((el) => io.observe(el));
+</script>
