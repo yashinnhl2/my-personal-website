@@ -8,68 +8,125 @@
     height: 100%;
     z-index: 0;
     pointer-events: none;
+    /* fades in once the (idle-scheduled) animation starts */
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+  canvas.ready {
+    opacity: 1;
   }
 </style>
 
 <script>
   const canvas = document.getElementById('stars') as HTMLCanvasElement;
   const ctx = canvas.getContext('2d')!;
+  const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const tints = ['#ffffff', '#ffffff', '#ffffff', '#f4a261', '#e9c46a', '#2a9d8f'];
 
-  type Star = { x: number; y: number; r: number; depth: number; phase: number; speed: number; c: string };
+  const COLORS = ['#ffffff', '#f4a261', '#e9c46a', '#2a9d8f'];
+  const LEVELS = 6; // twinkle brightness steps, so stars batch into a few fills instead of one each
+  const IDLE_MS = 1000 / 30; // ambient twinkle rate
+  const ACTIVE_MS = 1000 / 20; // while the user scrolls / moves the pointer, leave the main thread room
+  const ACTIVE_WINDOW = 160; // ms after the last input that still counts as "active"
+  const MAX_STARS = 260;
+  const TAU = Math.PI * 2;
+
+  type Star = {
+    nx: number; // position as a 0..1 fraction of the viewport, so resizing never rebuilds stars
+    ny: number;
+    r: number;
+    depth: number;
+    phase: number;
+    speed: number;
+    color: number;
+    x: number;
+    y: number;
+    lvl: number;
+  };
   type Shooter = { x: number; y: number; vx: number; vy: number; life: number };
 
-  let stars: Star[] = [];
+  // Generated once. Only the first `count` are drawn, and that depends on viewport area.
+  const stars: Star[] = Array.from({ length: MAX_STARS }, () => {
+    const depth = Math.random();
+    return {
+      nx: Math.random(),
+      ny: Math.random(),
+      r: 0.4 + depth * 1.2,
+      depth,
+      phase: Math.random() * TAU,
+      speed: 0.4 + Math.random() * 1.4,
+      color: Math.random() < 0.5 ? 0 : 1 + Math.floor(Math.random() * 3),
+      x: 0,
+      y: 0,
+      lvl: 0,
+    };
+  });
+  let groups: Star[][] = COLORS.map(() => []); // visible stars, split by color for batched fills
   let shooters: Shooter[] = [];
+
+  // Sizes come from ResizeObserver, never from innerWidth/innerHeight, which force a synchronous layout.
   let w = 0;
   let h = 0;
-  let scrollY = 0;
-  let mx = 0;
+  let count = 0;
+
+  // Input is only recorded in event handlers. Nothing is read from the DOM until the frame.
+  let lastInput = -Infinity;
+  let scrollDirty = true; // also picks up a scroll position restored on reload
+  let pointerX = 0.5; // pointer as a 0..1 fraction of the viewport
+  let pointerY = 0.5;
+  let sy = 0; // smoothed scroll
+  let targetSy = 0;
+  let mx = 0; // smoothed pointer offset (-0.5..0.5)
   let my = 0;
 
-  function resize() {
-    const dpr = Math.min(devicePixelRatio || 1, 2);
-    w = innerWidth;
-    h = innerHeight;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const count = Math.round((w * h) / 9000);
-    stars = Array.from({ length: count }, () => {
-      const depth = Math.random();
-      return {
-        x: Math.random() * w,
-        y: Math.random() * h,
-        r: 0.4 + depth * 1.2,
-        depth,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.4 + Math.random() * 1.4,
-        c: tints[Math.floor(Math.random() * tints.length)],
-      };
-    });
+  function regroup() {
+    count = Math.min(MAX_STARS, Math.round((w * h) / 9000));
+    groups = COLORS.map(() => []);
+    for (let i = 0; i < count; i++) groups[stars[i].color].push(stars[i]);
   }
 
-  function draw(t: number) {
+  function draw(seconds: number, dt: number) {
     ctx.clearRect(0, 0, w, h);
-    for (const s of stars) {
-      const tw = reduced ? 0.7 : 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t / 1000 * s.speed + s.phase));
+
+    // pass 1: positions and brightness level
+    for (let i = 0; i < count; i++) {
+      const s = stars[i];
+      const tw = reduced ? 0.7 : 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(seconds * s.speed + s.phase));
+      s.lvl = Math.min(LEVELS - 1, ((tw * (0.35 + s.depth * 0.65)) * LEVELS) | 0);
       // parallax: closer stars drift more on scroll / pointer
-      let y = (s.y - scrollY * s.depth * 0.25) % h;
-      if (y < 0) y += h;
-      const x = s.x + mx * s.depth * 14;
-      ctx.globalAlpha = tw * (0.35 + s.depth * 0.65);
-      ctx.fillStyle = s.c;
-      ctx.beginPath();
-      ctx.arc(x, y + my * s.depth * 14, s.r, 0, Math.PI * 2);
-      ctx.fill();
+      s.x = s.nx * w + mx * s.depth * 14;
+      s.y = ((((s.ny * h - sy * s.depth * 0.25) % h) + h) % h) + my * s.depth * 14;
+    }
+
+    // pass 2: one path + one fill per (color, brightness) instead of one per star
+    for (let c = 0; c < groups.length; c++) {
+      const group = groups[c];
+      if (!group.length) continue;
+      ctx.fillStyle = COLORS[c];
+      for (let l = 0; l < LEVELS; l++) {
+        let any = false;
+        ctx.beginPath();
+        for (let i = 0; i < group.length; i++) {
+          const s = group[i];
+          if (s.lvl !== l) continue;
+          ctx.moveTo(s.x + s.r, s.y);
+          ctx.arc(s.x, s.y, s.r, 0, TAU);
+          any = true;
+        }
+        if (any) {
+          ctx.globalAlpha = (l + 0.5) / LEVELS;
+          ctx.fill();
+        }
+      }
     }
 
     for (const m of shooters) {
-      m.x += m.vx;
-      m.y += m.vy;
-      m.life -= 0.016;
-      const g = ctx.createLinearGradient(m.x, m.y, m.x - m.vx * 14, m.y - m.vy * 14);
+      m.x += m.vx * dt;
+      m.y += m.vy * dt;
+      m.life -= dt;
+      const tx = m.x - m.vx * 0.23;
+      const ty = m.y - m.vy * 0.23;
+      const g = ctx.createLinearGradient(m.x, m.y, tx, ty);
       g.addColorStop(0, `rgba(255,255,255,${Math.max(m.life, 0)})`);
       g.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.globalAlpha = 1;
@@ -77,23 +134,106 @@
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(m.x, m.y);
-      ctx.lineTo(m.x - m.vx * 14, m.y - m.vy * 14);
+      ctx.lineTo(tx, ty);
       ctx.stroke();
     }
     shooters = shooters.filter((m) => m.life > 0);
-
-    if (!reduced && Math.random() < 0.0022) {
-      shooters.push({ x: Math.random() * w * 0.8, y: Math.random() * h * 0.4, vx: 7, vy: 3.5, life: 1 });
+    if (Math.random() < 0.13 * dt) {
+      shooters.push({ x: Math.random() * w * 0.8, y: Math.random() * h * 0.4, vx: 420, vy: 210, life: 1 });
     }
-    requestAnimationFrame(draw);
   }
 
-  resize();
-  addEventListener('resize', resize);
-  addEventListener('scroll', () => (scrollY = window.scrollY), { passive: true });
-  addEventListener('pointermove', (e) => {
-    mx = e.clientX / w - 0.5;
-    my = e.clientY / h - 0.5;
-  });
-  requestAnimationFrame(draw);
+  let raf = 0;
+  let timer = 0;
+  let last = 0;
+  let started = false;
+
+  // A timer sleeps until the next frame is due, then a single rAF draws it, so the main
+  // thread isn't woken on every vsync (120 times a second on a 120Hz display) just to skip.
+  function schedule(ms: number) {
+    timer = window.setTimeout(() => (raf = requestAnimationFrame(loop)), ms);
+  }
+
+  function loop(t: number) {
+    const interval = t - lastInput < ACTIVE_WINDOW ? ACTIVE_MS : IDLE_MS;
+    if (t - last < interval - 2) {
+      raf = requestAnimationFrame(loop); // woke early: wait one more vsync
+      return;
+    }
+
+    // The canvas is hidden behind the modal's backdrop, so don't spend frames on it.
+    if (root.classList.contains('modal-open')) {
+      last = t;
+      return schedule(250);
+    }
+
+    const dt = Math.min((t - last) / 1000, 0.1);
+    last = t;
+
+    // Batched read: at most one scroll read per frame, and only when the user actually scrolled.
+    if (scrollDirty) {
+      targetSy = window.scrollY;
+      scrollDirty = false;
+    }
+    sy += (targetSy - sy) * 0.2;
+    mx += (pointerX - 0.5 - mx) * 0.12;
+    my += (pointerY - 0.5 - my) * 0.12;
+
+    draw(t / 1000, dt);
+    schedule(interval - 8);
+  }
+
+  function start() {
+    started = true;
+    canvas.classList.add('ready');
+    if (reduced) return draw(0, 0); // one static frame, no loop at all
+    raf = requestAnimationFrame(loop);
+  }
+
+  new ResizeObserver(([entry]) => {
+    const box = entry.contentBoxSize[0];
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    w = box.inlineSize;
+    h = box.blockSize;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    regroup();
+    if (reduced && canvas.classList.contains('ready')) draw(0, 0);
+  }).observe(canvas);
+
+  if (!reduced) {
+    addEventListener(
+      'scroll',
+      (e) => {
+        scrollDirty = true;
+        lastInput = e.timeStamp;
+      },
+      { passive: true },
+    );
+    addEventListener(
+      'pointermove',
+      (e) => {
+        if (e.pointerType !== 'mouse') return; // no hover parallax on touch
+        pointerX = e.clientX / w;
+        pointerY = e.clientY / h;
+        lastInput = e.timeStamp;
+      },
+      { passive: true },
+    );
+    document.addEventListener('visibilitychange', () => {
+      if (!started) return;
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+      if (!document.hidden) {
+        last = 0;
+        raf = requestAnimationFrame(loop);
+      }
+    });
+  }
+
+  // The starfield is decoration, so start it when the browser is idle instead of competing
+  // with first paint and the hero entrance animation.
+  if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 1500 });
+  else setTimeout(start, 300);
 </script>
