@@ -4,6 +4,7 @@ export const profile = {
   email: 'yashin.nhl@gmail.com',
   linkedin: 'https://www.linkedin.com/in/yasinfarmani',
   scholar: 'https://scholar.google.com/citations?user=skZOUCIAAAAJ&hl=en',
+  resume: '/Yasin-Farmani-Resume.pdf',
   location: 'Greater Ottawa, Canada',
   timeZone: 'America/Toronto',
   currentRole: 'Senior Software Engineer',
